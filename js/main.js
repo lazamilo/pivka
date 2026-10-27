@@ -224,36 +224,47 @@
 
   /* ---------- Product rail (drag + inertia + tilt) ---------- */
   const rail = $('.rail'), rTrack = $('.rail__track'), bar = $('.rail__bar i');
-  let rx = 0, rTarget = 0, dragging = false, startX = 0, startT = 0, moved = 0, vel = 0, lastPX = 0;
-  const maxX = () => Math.max(0, rTrack.scrollWidth - innerWidth);
-  const clamp = v => Math.min(0, Math.max(-maxX(), v));
-  rail.addEventListener('pointerdown', e => {
-    dragging = true; moved = 0; startX = e.clientX; startT = rTarget; lastPX = e.clientX; vel = 0;
-    rail.setPointerCapture(e.pointerId);
-  });
-  rail.addEventListener('pointermove', e => {
-    if (!dragging) return;
-    const d = e.clientX - startX; moved = Math.max(moved, Math.abs(d));
-    vel = e.clientX - lastPX; lastPX = e.clientX;
-    rTarget = clamp(startT + d * 1.2);
-  });
-  const endDrag = () => { if (!dragging) return; dragging = false; rTarget = clamp(rTarget + vel * 14); };
-  rail.addEventListener('pointerup', endDrag);
-  rail.addEventListener('pointercancel', endDrag);
-  rail.addEventListener('click', e => { if (moved > 6) { e.preventDefault(); e.stopPropagation(); } }, true);
-  // gentle scroll-linked drift so the rail moves even without dragging
-  let scrollDrift = 0;
-  ScrollTrigger.create({
-    trigger: '.products', start: 'top bottom', end: 'bottom top',
-    onUpdate: self => { scrollDrift = -self.progress * Math.min(maxX(), innerWidth * .35); }
-  });
-  gsap.ticker.add(() => {
-    const goal = clamp(rTarget + scrollDrift);
-    rx += (goal - rx) * .085;
-    rTrack.style.transform = `translate3d(${rx}px,0,0)`;
-    const m = maxX(); const p = m ? -rx / m : 0;
-    bar.style.transform = `translateX(${p * 300}%)`;
-  });
+  if (!fine) {
+    // Touch screens: native horizontal scrolling (momentum + snap) is far more reliable than custom drag.
+    rail.classList.add('rail--native');
+    const syncBar = () => {
+      const m = rail.scrollWidth - rail.clientWidth;
+      bar.style.transform = `translateX(${(m ? rail.scrollLeft / m : 0) * 300}%)`;
+    };
+    rail.addEventListener('scroll', syncBar, { passive: true });
+    syncBar();
+  } else {
+    let rx = 0, rTarget = 0, dragging = false, startX = 0, startT = 0, moved = 0, vel = 0, lastPX = 0;
+    const maxX = () => Math.max(0, rTrack.scrollWidth - innerWidth);
+    const clamp = v => Math.min(0, Math.max(-maxX(), v));
+    rail.addEventListener('pointerdown', e => {
+      dragging = true; moved = 0; startX = e.clientX; startT = rTarget; lastPX = e.clientX; vel = 0;
+      rail.setPointerCapture(e.pointerId);
+    });
+    rail.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const d = e.clientX - startX; moved = Math.max(moved, Math.abs(d));
+      vel = e.clientX - lastPX; lastPX = e.clientX;
+      rTarget = clamp(startT + d * 1.2);
+    });
+    const endDrag = () => { if (!dragging) return; dragging = false; rTarget = clamp(rTarget + vel * 14); };
+    rail.addEventListener('pointerup', endDrag);
+    rail.addEventListener('pointercancel', endDrag);
+    rail.addEventListener('click', e => { if (moved > 6) { e.preventDefault(); e.stopPropagation(); } }, true);
+    // gentle scroll-linked drift so the rail moves even without dragging
+    let scrollDrift = 0;
+    ScrollTrigger.create({
+      trigger: '.products', start: 'top bottom', end: 'bottom top',
+      onUpdate: self => { scrollDrift = -self.progress * Math.min(maxX(), innerWidth * .35); }
+    });
+    gsap.ticker.add(() => {
+      const goal = clamp(rTarget + scrollDrift);
+      rx += (goal - rx) * .085;
+      rTrack.style.transform = `translate3d(${rx}px,0,0)`;
+      const m = maxX(); const p = m ? -rx / m : 0;
+      bar.style.transform = `translateX(${p * 300}%)`;
+    });
+  }
   if (fine && !reduce) {
     $$('.card').forEach(card => {
       card.addEventListener('pointermove', e => {

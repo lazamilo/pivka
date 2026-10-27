@@ -266,6 +266,10 @@ main, .foot { position: relative; z-index: 1; }
 .big-type em { text-transform: none; font-weight: 300; color: var(--g700); }
 .rail { user-select: none; -webkit-user-select: none; touch-action: pan-y; }
 .rail__track { display: flex; gap: 24px; padding: 0 var(--gut); width: max-content; will-change: transform; }
+.rail--native { overflow-x: auto; touch-action: pan-x pan-y; scroll-snap-type: x mandatory; scroll-padding: 0 var(--gut); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.rail--native::-webkit-scrollbar { display: none; }
+.rail--native .rail__track { will-change: auto; }
+.rail--native .card { scroll-snap-align: start; }
 .card {
   position: relative; width: clamp(240px, 26vw, 380px); aspect-ratio: 3/4; border-radius: 28px; background: var(--paper);
   display: grid; grid-template-rows: 1fr auto auto; padding: 28px; overflow: hidden; transform-style: preserve-3d;
