@@ -95,8 +95,19 @@
   $$('[data-theme]').forEach(sec => {
     const afterSunset = sec === sunsetAt || !!(sunsetAt.compareDocumentPosition(sec) & Node.DOCUMENT_POSITION_FOLLOWING);
     ScrollTrigger.create({
-      trigger: sec, start: 'top 55%', end: 'bottom 55%',
+      // created before the pinned sections, so measure after their pin spacing exists
+      trigger: sec, start: 'top 55%', end: 'bottom 55%', refreshPriority: -1,
       onToggle: self => self.isActive && window.PivkaGL.setTheme(sec.dataset.theme, afterSunset)
+    });
+  });
+
+  /* ---------- Pause WebGL under opaque sections ---------- */
+  // While an opaque section fills the whole viewport the canvas is invisible, so stop drawing it.
+  let covering = 0;
+  $$('.fresh, .products, .stories, .recipes').forEach(sec => {
+    ScrollTrigger.create({
+      trigger: sec, start: 'top top', end: 'bottom bottom', refreshPriority: -1,
+      onToggle: self => { covering += self.isActive ? 1 : -1; window.PivkaGL.setActive(covering <= 0); }
     });
   });
 

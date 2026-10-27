@@ -3,13 +3,19 @@
 (function () {
   const canvas = document.querySelector('.gl');
   const gl = canvas && canvas.getContext('webgl', { antialias: false, premultipliedAlpha: false });
-  if (!gl) { window.PivkaGL = { setTheme() {}, setMouse() {} }; return; }
+  if (!gl) { window.PivkaGL = { setTheme() {}, setMouse() {}, setActive() {}, startIntro() {} }; return; }
+
+  // Phones/tablets: render at a fraction of screen resolution (the scene is soft anyway),
+  // use fewer noise octaves and cap at 30fps. Cuts per-frame GPU work by roughly 20x.
+  const lite = matchMedia('(hover: none), (pointer: coarse)').matches || innerWidth < 768;
+  const OCTAVES = lite ? 3 : 5;
 
   const vert = `
     attribute vec2 a; void main(){ gl_Position = vec4(a, 0., 1.); }`;
 
   const frag = `
     precision highp float;
+    #define OCTAVES ${OCTAVES}
     uniform vec2 uRes; uniform float uTime; uniform vec2 uMouse;
     uniform vec3 uSky1; uniform vec3 uSky2; uniform vec3 uHill1; uniform vec3 uHill2; uniform vec3 uSun;
     uniform vec2 uSunPos; uniform float uSunR; uniform float uLines; uniform float uHills;
@@ -19,7 +25,7 @@
       vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.-2.*f);
       return mix(mix(hash(i), hash(i+vec2(1,0)), u.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), u.x), u.y);
     }
-    float fbm(vec2 p){ float v = 0., a = .5; for(int i=0;i<5;i++){ v += a*noise(p); p = p*2.03 + 17.1; a *= .5; } return v; }
+    float fbm(vec2 p){ float v = 0., a = .5; for(int i=0;i<OCTAVES;i++){ v += a*noise(p); p = p*2.03 + 17.1; a *= .5; } return v; }
 
     void main(){
       vec2 uv = gl_FragCoord.xy / uRes;
@@ -111,8 +117,12 @@
 
   const lerpArr = (a, b, k) => { for (let i = 0; i < a.length; i++) a[i] += (b[i] - a[i]) * k; };
 
+  let lastW = 0, lastH = 0;
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5) * (innerWidth > 1600 ? .8 : 1);
+    // On phones the URL bar showing/hiding fires resize constantly; only reallocate on real size changes.
+    if (lite && innerWidth === lastW && Math.abs(innerHeight - lastH) < lastH * .25) return;
+    lastW = innerWidth; lastH = innerHeight;
+    const dpr = lite ? .6 : Math.min(window.devicePixelRatio || 1, 1.5) * (innerWidth > 1600 ? .8 : 1);
     canvas.width = Math.round(innerWidth * dpr);
     canvas.height = Math.round(innerHeight * dpr);
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -121,8 +131,13 @@
 
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const t0 = performance.now();
-  let intro = 0, last = t0;
+  let intro = 0, last = t0, active = true, lastDraw = 0;
+  const minFrame = lite ? 1000 / 30 - 2 : 0;
   function frame(now) {
+    requestAnimationFrame(frame);
+    // Skip work while a solid section covers the whole screen, and throttle on phones.
+    if (!active || now - lastDraw < minFrame) return;
+    lastDraw = now;
     const t = reduce ? 10 : (now - t0) / 1000;
     // time-based easing so theme changes settle at the same speed at any frame rate
     const dt = Math.min((now - last) / 1000, .5); last = now;
@@ -145,11 +160,11 @@
     gl.uniform1f(U.uLines, cur.lines);
     gl.uniform1f(U.uHills, cur.hills);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 
   window.PivkaGL = {
+    setActive(on) { if (on && !active) last = performance.now(); active = on; },
     // setSun: once the sun has set (from the journey section on), later sections keep it low
     setTheme(name, setSun) {
       if (!THEMES[name]) return;
