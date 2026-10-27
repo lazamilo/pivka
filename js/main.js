@@ -264,33 +264,38 @@
   /* ---------- Stories (pinned slideshow) ---------- */
   // Warm the campaign images up front so none pops in mid-scroll.
   $$('.story img').forEach(img => { img.decode && img.decode().catch(() => {}); });
-  gsap.fromTo('.story.is-active img', { scale: 1.4 }, {
+  gsap.fromTo('.story:first-child img', { scale: 1.4 }, {
     scale: 1.15, ease: 'none',
     scrollTrigger: { trigger: '.stories', start: 'top bottom', end: 'top top', scrub: true }
   });
+  // One timeline scrubbed by scroll: every scroll position maps to exactly one state,
+  // so fast or reversed scrolling can't leave slides half-revealed or titles hidden.
   const stories = $$('.story'), titles = $$('.stitle');
-  let active = 0;
-  function showStory(i) {
-    if (i === active) return;
-    const dir = i > active ? 1 : -1;
-    const from = stories[active], to = stories[i];
-    gsap.set(stories, { zIndex: 0 }); gsap.set(from, { zIndex: 1 }); gsap.set(to, { zIndex: 2 });
-    gsap.fromTo(to, { clipPath: dir > 0 ? 'inset(100% 0 0 0)' : 'inset(0 0 100% 0)' }, { clipPath: 'inset(0% 0 0% 0)', duration: 1.2, ease: 'expo.inOut' });
-    gsap.fromTo(to.querySelector('img'), { scale: 1.35 }, { scale: 1.15, duration: 1.6, ease: 'expo.out' });
-    stories.forEach((s, k) => s.classList.toggle('is-active', k === i));
-    const outT = titles[active], inT = titles[i];
-    gsap.to(outT, { autoAlpha: 0, y: -40 * dir, duration: .5, ease: 'power3.in', onComplete: () => outT.classList.remove('is-active') });
-    inT.classList.add('is-active');
-    gsap.fromTo(inT.children, { y: 60 * dir, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1, ease: 'expo.out', stagger: .07, delay: .3 });
-    gsap.set(inT, { autoAlpha: 1, y: 0 });
-    active = i;
-  }
-  gsap.set(titles.slice(1), { autoAlpha: 0 });
-  ScrollTrigger.create({
-    trigger: '.stories', start: 'top top', end: '+=' + (stories.length * 80) + '%',
-    pin: '.stories__pin', anticipatePin: 1,
-    onUpdate: self => showStory(Math.min(stories.length - 1, Math.floor(self.progress * stories.length * .999)))
+  gsap.set(stories, { clipPath: 'inset(100% 0% 0% 0%)' });
+  gsap.set(stories[0], { clipPath: 'inset(0% 0% 0% 0%)' });
+  gsap.set(titles, { autoAlpha: 0 });
+  gsap.set(titles[0], { autoAlpha: 1 });
+  const setActiveTitle = i => titles.forEach((t, k) => t.classList.toggle('is-active', k === i));
+  setActiveTitle(0);
+  const storyTl = gsap.timeline({
+    defaults: { ease: 'none' },
+    scrollTrigger: {
+      trigger: '.stories', start: 'top top', end: '+=' + (stories.length * 80) + '%',
+      pin: '.stories__pin', scrub: .6, anticipatePin: 1,
+      onUpdate: self => setActiveTitle(Math.min(titles.length - 1, Math.round(self.progress * (titles.length - 1))))
+    }
   });
+  for (let i = 1; i < stories.length; i++) {
+    const at = i - 1 + .25;
+    storyTl
+      .to(stories[i], { clipPath: 'inset(0% 0% 0% 0%)', duration: .6, ease: 'power2.inOut' }, at)
+      .fromTo(stories[i].querySelector('img'), { scale: 1.35 }, { scale: 1.15, duration: .75 }, at)
+      .to(titles[i - 1].children, { y: -50, autoAlpha: 0, duration: .25, stagger: .03 }, at)
+      .set(titles[i - 1], { autoAlpha: 0 }, at + .3)
+      .set(titles[i], { autoAlpha: 1 }, at + .3)
+      .fromTo(titles[i].children, { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .3, stagger: .04 }, at + .3);
+  }
+  storyTl.to({}, { duration: .25 });
 
   /* ---------- Marquee velocity ---------- */
   const rows = $$('.marquee__row');
