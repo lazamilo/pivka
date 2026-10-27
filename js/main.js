@@ -191,10 +191,14 @@
   });
   jTl.to(track, { x: () => -dist(), ease: 'none' }, 0)
      .to('.journey__progress i', { scaleX: 1, ease: 'none' }, 0);
-  $$('.stop').forEach(stop => {
+  $$('.stop').forEach((stop, i) => {
+    // Cards already on screen when the section arrives (wide screens) reveal as it scrolls in,
+    // instead of waiting for the sideways scroll to start.
+    const onScreen = stop.offsetLeft < innerWidth;
     gsap.from(stop.querySelectorAll('.stop__icon, h2, p, img, .btn'), {
+      delay: onScreen ? i * .12 : 0,
       y: 60, autoAlpha: 0, stagger: .08, ease: 'expo.out', duration: 1,
-      scrollTrigger: { trigger: stop, containerAnimation: jTl, start: 'left 85%' }
+      scrollTrigger: onScreen ? { trigger: '.journey', start: 'top 75%' } : { trigger: stop, containerAnimation: jTl, start: 'left 85%' }
     });
     const icon = stop.querySelector('.stop__icon');
     if (!icon) return;
