@@ -328,10 +328,10 @@
       peekItem = item;
       if (item) {
         peekImg.src = item.dataset.img;
-        gsap.to(peek, { clipPath: 'inset(0% 0% 0% 0% round 14px)', duration: .7, ease: 'expo.out', overwrite: true });
+        gsap.to(peek, { clipPath: 'inset(0% 0% 0% 0% round 14px)', duration: .7, ease: 'expo.out', overwrite: 'auto' });
         gsap.fromTo(peekImg, { scale: 1.4 }, { scale: 1.05, duration: 1, ease: 'expo.out' });
       } else {
-        gsap.to(peek, { clipPath: 'inset(50% 50% 50% 50% round 14px)', duration: .5, ease: 'expo.in', overwrite: true });
+        gsap.to(peek, { clipPath: 'inset(50% 50% 50% 50% round 14px)', duration: .5, ease: 'expo.in', overwrite: 'auto' });
       }
     };
     $$('.ritem').forEach(item => {
