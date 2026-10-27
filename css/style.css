@@ -194,7 +194,10 @@ main, .foot { position: relative; z-index: 1; }
   border-radius: 50%; background: var(--yolk); animation: wheel 2s infinite;
 }
 @keyframes wheel { to { opacity: 0; transform: translateY(16px); } }
-@media (max-width: 640px) { .hero__foot { flex-direction: column; align-items: start; } }
+@media (max-width: 640px) {
+  .hero { min-height: calc(100svh - 34px); } /* fit the first screen below the ticker so the bottom padding shows */
+  .hero__foot { flex-direction: column; align-items: start; }
+}
 
 /* ---------- Manifesto ---------- */
 .manifesto { min-height: 100vh; padding: 20vh var(--gut); display: grid; align-content: center; gap: 48px; max-width: 1400px; }
