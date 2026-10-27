@@ -364,7 +364,9 @@ main, .foot { position: relative; z-index: 1; }
 .news input::placeholder { color: rgba(10,31,19,.4); }
 .news button { padding: 14px 28px; border-radius: 999px; background: var(--ink); color: var(--yolk); font-weight: 700; transition: background .3s, color .3s; }
 .news button:hover { background: var(--g700); color: var(--cream); }
-.news__msg { min-height: 1.5em; font-weight: 600; font-size: 15px !important; }
+.news__msg { font-weight: 600; font-size: 15px !important; }
+/* empty status line stays in the a11y tree (live region) but takes no space */
+.news__msg:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (max-width: 900px) { .connect { grid-template-columns: minmax(0, 1fr); } .news { position: relative; top: 0; } }
 
 /* ---------- Footer ---------- */
