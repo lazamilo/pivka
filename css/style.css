@@ -354,7 +354,7 @@ main, .foot { position: relative; z-index: 1; }
 .connect__social a::after { content: "↗"; font-weight: 300; font-size: .6em; color: var(--yolk); transform: translate(-10px, 10px); opacity: 0; transition: transform .6s var(--ease), opacity .4s; }
 .connect__social a:hover { color: var(--yolk); padding-left: 16px; }
 .connect__social a:hover::after { transform: none; opacity: 1; }
-.news { position: sticky; top: 120px; padding: clamp(28px, 4vw, 56px); border-radius: 32px; background: var(--yolk); color: var(--ink); display: grid; gap: 22px; }
+.news { position: sticky; top: 120px; padding: clamp(28px, 4vw, 56px); border-radius: 32px; background: var(--yolk); color: var(--ink); display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
 .news h2 { font-size: clamp(40px, 4.6vw, 80px); line-height: .98; font-weight: 800; text-transform: uppercase; font-variation-settings: "wdth" 75; letter-spacing: -.005em; }
 .news h2 em { text-transform: none; color: var(--g700); font-weight: 300; }
 .news p { font-size: 17px; max-width: 42ch; }
@@ -365,7 +365,7 @@ main, .foot { position: relative; z-index: 1; }
 .news button { padding: 14px 28px; border-radius: 999px; background: var(--ink); color: var(--yolk); font-weight: 700; transition: background .3s, color .3s; }
 .news button:hover { background: var(--g700); color: var(--cream); }
 .news__msg { min-height: 1.5em; font-weight: 600; font-size: 15px !important; }
-@media (max-width: 900px) { .connect { grid-template-columns: 1fr; } .news { position: relative; top: 0; } }
+@media (max-width: 900px) { .connect { grid-template-columns: minmax(0, 1fr); } .news { position: relative; top: 0; } }
 
 /* ---------- Footer ---------- */
 .foot { padding: 10vh var(--gut) 28px; overflow: hidden; }
