@@ -272,7 +272,7 @@
   });
 
   /* ---------- Fresh ---------- */
-  gsap.fromTo('.fresh__img img', { yPercent: -12 }, {
+  gsap.fromTo('.fresh__packs', { yPercent: -6 }, {
     yPercent: 0, ease: 'none', scrollTrigger: { trigger: '.fresh', start: 'top bottom', end: 'bottom top', scrub: true }
   });
   gsap.from('.fresh__copy > *', {
@@ -309,6 +309,23 @@
   const setW = () => SW;
   const wrap = v => ((v % SW) + SW) % SW;               // position inside one set, 0..SW
   const setBar = p => { bar.style.transform = `translateX(${p * 300}%)`; };
+  // Category tabs: offset of each group's first card inside one set, and which group is in view.
+  const tabs = $$('.rail__tab');
+  const groupStart = cat => originals.find(c => c.dataset.cat === cat).offsetLeft - originals[0].offsetLeft;
+  let activeCat = '';
+  const syncTabs = offset => {
+    const probe = wrap(offset + 40);
+    let cat = originals[0].dataset.cat;
+    originals.forEach(c => { if (c.offsetLeft - originals[0].offsetLeft <= probe) cat = c.dataset.cat; });
+    if (cat === activeCat) return;
+    activeCat = cat;
+    tabs.forEach(t => { const on = t.dataset.cat === cat; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', on); });
+    // phones: the tab row scrolls sideways, so keep the active tab in view
+    const row = tabs[0].parentElement, on = tabs.find(t => t.dataset.cat === cat);
+    if (row.scrollWidth > row.clientWidth) row.scrollTo({ left: on.offsetLeft - row.offsetLeft - 16, behavior: 'smooth' });
+  };
+  let jumpTo = () => {};
+  tabs.forEach(t => t.addEventListener('click', () => jumpTo(groupStart(t.dataset.cat))));
 
   if (!fine) {
     // Touch screens: native horizontal scrolling (momentum + snap); recentre on the middle copy
@@ -321,9 +338,11 @@
     let settle;
     rail.addEventListener('scroll', () => {
       setBar(wrap(rail.scrollLeft) / setW());
+      syncTabs(rail.scrollLeft);
       clearTimeout(settle); settle = setTimeout(recentre, 140);
     }, { passive: true });
     requestAnimationFrame(() => { rail.scrollLeft = setW(); setBar(0); });
+    jumpTo = offset => rail.scrollTo({ left: setW() + offset, behavior: reduce ? 'auto' : 'smooth' });
   } else {
     let pos = 0, target = 0, vel = 0, hovering = false, dragging = false;
     let startX = 0, startT = 0, lastPX = 0, moved = 0;
@@ -361,7 +380,14 @@
       const x = -(setW() + wrap(pos));
       rTrack.style.transform = `translate3d(${x}px,0,0)`;
       setBar(wrap(pos) / setW());
+      syncTabs(pos);
     });
+    // shortest way round the loop to the group's first card
+    jumpTo = offset => {
+      let d = offset - wrap(target);
+      if (d > SW / 2) d -= SW; else if (d < -SW / 2) d += SW;
+      target += d; vel = 0;
+    };
   }
   if (fine && !reduce) {
     $$('.card').forEach(card => {
