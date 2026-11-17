@@ -55,6 +55,9 @@
   const heroChars = $$('.hero__title .split, .hero__title .split-i').flatMap(splitChars);
   gsap.set(heroChars, { yPercent: 110 });
   gsap.set('.hero__foot', { autoAlpha: 0, y: 20 });
+  const packs = $$('.pack'), tags = $$('.hero__tag');
+  gsap.set(packs, { autoAlpha: 0, yPercent: 40, scale: .9 });
+  gsap.set(tags, { autoAlpha: 0, scale: .6 });
 
   /* ---------- Loader ---------- */
   const num = $('.loader__num');
@@ -72,32 +75,79 @@
         v: 100, duration: .5, ease: 'power2.out',
         onUpdate: () => { num.textContent = Math.round(counter.v); gsap.set('.loader__fill', { attr: { y: 150 - counter.v * 1.5 } }); }
       })
-      .add(() => window.PivkaGL.startIntro())
       .to('.loader__egg', { scale: 1.25, duration: .35, ease: 'power2.in' })
       .to('.loader__egg', { scale: 0, rotate: 20, duration: .45, ease: 'back.in(2)' })
       .to('.loader__count, .loader__line', { yPercent: -60, autoAlpha: 0, duration: .5, ease: 'power3.in' }, '<')
       .to('.loader', { clipPath: 'inset(0 0 100% 0)', duration: 1.1, ease: 'expo.inOut' }, '-=.2')
       .set('.loader', { display: 'none' })
       .to(heroChars, { yPercent: 0, duration: 1.3, ease: 'expo.out', stagger: { each: .022 } }, '-=.6')
-      .to('.hero__foot', { autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', stagger: .1 }, '-=1');
+      .to('.hero__foot', { autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', stagger: .1 }, '-=1')
+      .to(packs, { autoAlpha: 1, yPercent: 0, scale: 1, duration: 1.4, ease: 'expo.out', stagger: .12 }, '-=1.1')
+      .to(tags, { autoAlpha: 1, scale: 1, duration: .9, ease: 'back.out(2)', stagger: .12 }, '-=.8')
+      .add(floatPacks);
   }
   const waitLoad = () => (loaded || performance.now() > 3500) ? finishLoader() : setTimeout(waitLoad, 100);
   loadTl.eventCallback('onComplete', waitLoad);
+
+  /* ---------- Hero product packs: fit into the free area beside the title ---------- */
+  // The free right column depends on the title width and the viewport height, so measure it
+  // and size the pack cluster to fill it without touching the title.
+  const productsEl = $('.hero__products');
+  function fitPacks() {
+    if (matchMedia('(max-width: 640px)').matches) { productsEl.style.cssText = ''; return; }
+    const hero = $('.hero'), heroBox = hero.getBoundingClientRect();
+    const titleRight = Math.max(...$$('.hero__title .split, .hero__title .split-i')
+      .map(el => el.getBoundingClientRect().right - heroBox.left));
+    const navBottom = $('.nav').getBoundingClientRect().bottom - heroBox.top;
+    const cs = getComputedStyle(hero);
+    const gut = parseFloat(cs.paddingRight);
+    const top = Math.max(navBottom + 16, 100);
+    const bottom = hero.clientHeight - parseFloat(cs.paddingBottom) - 64;  // clear of the scroll hint
+    const left = Math.max(titleRight + 56, hero.clientWidth * .45);
+    const availW = hero.clientWidth - gut - left, availH = bottom - top;
+    const w = Math.max(0, Math.min(availW, availH * 1.25, 820));
+    productsEl.style.cssText = `width:${w}px; top:${top + (availH - w / 1.25) / 2}px; right:${gut + (availW - w) / 2}px;`;
+  }
+  fitPacks();
+  document.fonts.ready.then(() => { fitPacks(); ScrollTrigger.refresh(); });
+  addEventListener('resize', fitPacks);
+
+  /* ---------- Hero product packs: float + mouse parallax ---------- */
+  // Float animates yPercent and parallax animates x/y, so the two never fight over a property.
+  function floatPacks() {
+    if (reduce) return;
+    packs.forEach((pack, i) => gsap.to(pack, {
+      yPercent: i % 2 ? -4 : 4, duration: 2.6 + i * .5, ease: 'sine.inOut', yoyo: true, repeat: -1
+    }));
+  }
+  if (fine && !reduce) {
+    const movers = packs.map(pack => ({
+      depth: parseFloat(pack.dataset.depth) || 1,
+      x: gsap.quickTo(pack, 'x', { duration: 1.2, ease: 'power3' }),
+      y: gsap.quickTo(pack, 'y', { duration: 1.2, ease: 'power3' })
+    }));
+    addEventListener('pointermove', e => {
+      const nx = e.clientX / innerWidth - .5, ny = e.clientY / innerHeight - .5;
+      movers.forEach(m => { m.x(nx * 36 * m.depth); m.y(ny * 24 * m.depth); });
+    }, { passive: true });
+  }
 
   /* ---------- Hero scroll-away ---------- */
   gsap.to('.hero__title', {
     yPercent: -18, opacity: 0.15, ease: 'none',
     scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
   });
+  gsap.to('.hero__products', {
+    y: () => -innerHeight * .18, opacity: 0, ease: 'none',
+    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true, invalidateOnRefresh: true }
+  });
 
   /* ---------- GL themes per section ---------- */
-  const sunsetAt = $('.journey');
   $$('[data-theme]').forEach(sec => {
-    const afterSunset = sec === sunsetAt || !!(sunsetAt.compareDocumentPosition(sec) & Node.DOCUMENT_POSITION_FOLLOWING);
     ScrollTrigger.create({
       // created before the pinned sections, so measure after their pin spacing exists
       trigger: sec, start: 'top 55%', end: 'bottom 55%', refreshPriority: -1,
-      onToggle: self => self.isActive && window.PivkaGL.setTheme(sec.dataset.theme, afterSunset)
+      onToggle: self => self.isActive && window.PivkaGL.setTheme(sec.dataset.theme)
     });
   });
 

@@ -181,12 +181,37 @@ main, .foot { position: relative; z-index: 1; }
 }
 .hero__title {
   align-self: end; font-weight: 800; font-variation-settings: "wdth" 75; text-transform: uppercase;
-  font-size: clamp(56px, 13.5vw, 230px); line-height: .94; letter-spacing: -.01em;
+  font-size: clamp(56px, min(10.5vw, 15vh), 190px); line-height: .94; letter-spacing: -.01em;
 }
 .hero__title em { text-transform: none; color: var(--yolk); font-weight: 300; font-size: .92em; letter-spacing: -.04em; display: inline-block; }
 .hero__title .line--sm { font-size: .3em; letter-spacing: .015em; line-height: 1.1; margin-top: .4em; font-variation-settings: "wdth" 85; font-weight: 600; }
+.hero__title, .hero__foot { position: relative; z-index: 2; }
 .hero__foot { display: flex; justify-content: space-between; align-items: end; gap: 24px; }
+.hero__intro { display: grid; gap: 22px; justify-items: start; }
 .hero__lede { max-width: 440px; color: var(--muted); font-size: 17px; }
+
+/* Fresh-meat pack stack: the hero's product focus.
+   Desktop: main.js sizes it into the right column beside the title. Phones: normal flow above the headline. */
+.hero__products {
+  position: absolute; z-index: 1; right: var(--gut); top: 120px;
+  width: min(44vw, 820px); aspect-ratio: 5 / 4;
+}
+.pack { position: absolute; display: block; }
+.pack img { width: 100%; height: auto; filter: drop-shadow(0 28px 34px rgba(0, 0, 0, .42)); transition: scale .7s var(--ease); }
+.pack:hover img { scale: 1.04; }
+.pack--l { width: 50%; left: 0; top: 6%; }
+.pack--l img { rotate: -9deg; }
+.pack--r { width: 50%; right: 0; top: 0; }
+.pack--r img { rotate: 8deg; }
+.pack--front { width: 66%; left: 17%; top: 28%; }
+.pack--front img { rotate: -3deg; }
+.hero__tag {
+  position: absolute; z-index: 3; padding: 10px 16px; border-radius: 999px; white-space: nowrap;
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .25); pointer-events: none;
+}
+.hero__tag--fresh { left: 2%; top: 62%; background: var(--yolk); color: var(--ink); rotate: -6deg; }
+.hero__tag--ab { right: 0; bottom: 2%; background: var(--cream); color: var(--g800); rotate: 4deg; }
 .hero__scroll { display: flex; align-items: center; }
 .mouse { position: relative; width: 26px; height: 42px; border-radius: 14px; box-shadow: inset 0 0 0 1.5px var(--muted); }
 .mouse::before {
@@ -196,7 +221,11 @@ main, .foot { position: relative; z-index: 1; }
 @keyframes wheel { to { opacity: 0; transform: translateY(16px); } }
 @media (max-width: 640px) {
   .hero { min-height: calc(100svh - 34px); } /* fit the first screen below the ticker so the bottom padding shows */
+  .hero { padding-top: 104px; grid-template-rows: auto 1fr auto; }
+  .hero__products { position: relative; right: auto; top: auto; order: -1; justify-self: center; width: min(86%, 420px); }
+  .hero__tag { font-size: 10px; padding: 8px 12px; }
   .hero__foot { flex-direction: column; align-items: start; }
+  .hero__scroll { display: none; }
 }
 
 /* ---------- Manifesto ---------- */
