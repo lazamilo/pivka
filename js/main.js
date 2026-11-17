@@ -288,6 +288,9 @@
   // Three copies of the product set; the visible window always sits in the middle copy and
   // wraps by exactly one set width, so the loop is seamless in both directions.
   const originals = $$('.card', rTrack);
+  // Cards are links, which browsers drag natively; that fires pointercancel and kills the rail drag.
+  originals.forEach(card => { card.draggable = false; });
+  rail.addEventListener('dragstart', e => e.preventDefault());
   for (let k = 0; k < 2; k++) {
     originals.forEach(card => {
       const clone = card.cloneNode(true);
