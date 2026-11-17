@@ -385,7 +385,7 @@
   // One timeline scrubbed by scroll: every scroll position maps to exactly one state,
   // so fast or reversed scrolling can't leave slides half-revealed or titles hidden.
   const stories = $$('.story'), titles = $$('.stitle');
-  // New-packaging slide: tilt set here (GSAP clears CSS rotate on elements it animates), then rise in
+  // Grill slide packs: tilt set here (GSAP clears CSS rotate on elements it animates), then rise in
   gsap.set('.story__packs img', { rotation: i => [-7, 2, 7][i] });
   gsap.from('.story__packs img', {
     yPercent: 60, autoAlpha: 0, duration: 1.2, ease: 'expo.out', stagger: .12,
