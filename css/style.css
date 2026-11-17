@@ -323,17 +323,17 @@ main, .foot { position: relative; z-index: 1; }
 .story + .story { clip-path: inset(100% 0 0 0); }
 .story > img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.15); }
 /* "Novo embalažo" slide: the current packs, shown over the campaign illustration */
-.story__packs { position: absolute; z-index: 1; right: var(--gut); bottom: 9%; width: min(48vw, 780px); aspect-ratio: 5 / 2; }
+.story__packs { display: none; position: absolute; z-index: 1; right: var(--gut); bottom: 9%; width: min(48vw, 780px); aspect-ratio: 5 / 2; }
 .story__packs img { position: absolute; width: 40%; filter: drop-shadow(0 26px 30px rgba(0, 0, 0, .45)); }
 .story__packs img:nth-child(1) { left: 0; top: 14%; }
 .story__packs img:nth-child(2) { left: 30%; top: 0; z-index: 1; }
 .story__packs img:nth-child(3) { right: 0; top: 16%; }
 @media (max-width: 640px) {
-  .story__packs { right: 50%; translate: 50% 0; bottom: 16%; width: 92vw; }
+  .story__packs { display: block; right: 50%; translate: 50% 0; bottom: 16%; width: 92vw; }
 }
 .story::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(1,25,13,.88) 0%, rgba(1,25,13,.45) 45%, rgba(1,25,13,.05) 80%), linear-gradient(0deg, rgba(1,25,13,.6), transparent 40%); }
 .stories__copy { position: relative; z-index: 2; padding: 120px var(--gut) 56px; display: grid; grid-template-rows: 1fr auto; max-width: 1100px; }
-.stories__titles { position: relative; align-self: center; min-height: 40vh; }
+.stories__titles { position: relative; align-self: stretch; min-height: 40vh; }
 .stitle { position: absolute; left: 0; top: 0; bottom: 0; display: grid; align-content: center; gap: 14px; pointer-events: none; }
 .stitle + .stitle { visibility: hidden; }
 .stitle.is-active { pointer-events: auto; }
@@ -434,4 +434,23 @@ main, .foot { position: relative; z-index: 1; }
   .stop { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(3, 39, 20, .86); }
   .stop--cert { background: var(--cream); }
   .stories__ig { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(1, 25, 13, .55); }
+}
+
+/* ---------- "Novo embalažo" slide: light 2026 campaign art ----------
+   The background already shows the new packs bottom-left, so this slide drops the dark
+   gradient, sets its copy dark at the top (where the banner's own headline sat) and
+   hides the shared #pivkamoment button while it's showing. */
+.story--light::after { display: none; }
+.story--light > img { object-position: 12% 50%; }
+.stitle--light { align-content: start; }
+.stitle--light small { color: var(--g700); }
+.stitle--light b { color: var(--g800); }
+.stitle--light span { color: var(--ink); opacity: .75; }
+.stories__ig { transition: background .5s, color .5s, box-shadow .5s, opacity .5s, translate .5s var(--ease); }
+/* the art's packs run to the bottom edge, so the shared button steps aside on this slide */
+.stories.is-light .stories__ig { opacity: 0; translate: 0 16px; pointer-events: none; }
+@media (max-width: 640px) {
+  /* phones: the art is too wide for all three packs, so show its barbecue scene; the cut-out packs sit below the copy */
+  .story--light > img { object-position: 84% 50%; }
+  .story--light::after { display: block; background: linear-gradient(180deg, rgba(224, 223, 219, .97) 0%, rgba(224, 223, 219, .9) 42%, rgba(224, 223, 219, 0) 60%); }
 }

@@ -377,8 +377,9 @@
   /* ---------- Stories (pinned slideshow) ---------- */
   // Warm the campaign images up front so none pops in mid-scroll.
   $$('.story img').forEach(img => { img.decode && img.decode().catch(() => {}); });
-  gsap.fromTo('.story:first-child > img', { scale: 1.4 }, {
-    scale: 1.15, ease: 'none',
+  // first slide is the 2026 campaign art: settle at 1x so its packs stay clear of the button
+  gsap.fromTo('.story:first-child > img', { scale: 1.2 }, {
+    scale: 1, ease: 'none',
     scrollTrigger: { trigger: '.stories', start: 'top bottom', end: 'top top', scrub: true }
   });
   // One timeline scrubbed by scroll: every scroll position maps to exactly one state,
@@ -394,7 +395,11 @@
   gsap.set(stories[0], { clipPath: 'inset(0% 0% 0% 0%)' });
   gsap.set(titles, { autoAlpha: 0 });
   gsap.set(titles[0], { autoAlpha: 1 });
-  const setActiveTitle = i => titles.forEach((t, k) => t.classList.toggle('is-active', k === i));
+  const storiesEl = $('.stories');
+  const setActiveTitle = i => {
+    titles.forEach((t, k) => t.classList.toggle('is-active', k === i));
+    storiesEl.classList.toggle('is-light', titles[i].classList.contains('stitle--light'));
+  };
   setActiveTitle(0);
   const storyTl = gsap.timeline({
     defaults: { ease: 'none' },
