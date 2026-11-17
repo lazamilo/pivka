@@ -377,13 +377,19 @@
   /* ---------- Stories (pinned slideshow) ---------- */
   // Warm the campaign images up front so none pops in mid-scroll.
   $$('.story img').forEach(img => { img.decode && img.decode().catch(() => {}); });
-  gsap.fromTo('.story:first-child img', { scale: 1.4 }, {
+  gsap.fromTo('.story:first-child > img', { scale: 1.4 }, {
     scale: 1.15, ease: 'none',
     scrollTrigger: { trigger: '.stories', start: 'top bottom', end: 'top top', scrub: true }
   });
   // One timeline scrubbed by scroll: every scroll position maps to exactly one state,
   // so fast or reversed scrolling can't leave slides half-revealed or titles hidden.
   const stories = $$('.story'), titles = $$('.stitle');
+  // New-packaging slide: tilt set here (GSAP clears CSS rotate on elements it animates), then rise in
+  gsap.set('.story__packs img', { rotation: i => [-7, 2, 7][i] });
+  gsap.from('.story__packs img', {
+    yPercent: 60, autoAlpha: 0, duration: 1.2, ease: 'expo.out', stagger: .12,
+    scrollTrigger: { trigger: '.stories', start: 'top 60%' }
+  });
   gsap.set(stories, { clipPath: 'inset(100% 0% 0% 0%)' });
   gsap.set(stories[0], { clipPath: 'inset(0% 0% 0% 0%)' });
   gsap.set(titles, { autoAlpha: 0 });
