@@ -283,47 +283,79 @@
     gsap.from(h, { yPercent: 30, autoAlpha: 0, duration: 1.4, ease: 'expo.out', scrollTrigger: { trigger: h, start: 'top 85%' } });
   });
 
-  /* ---------- Product rail (drag + inertia + tilt) ---------- */
+  /* ---------- Product rail: infinite loop (auto-glide, trackpad, drag; native swipe on touch) ---------- */
   const rail = $('.rail'), rTrack = $('.rail__track'), bar = $('.rail__bar i');
+  // Three copies of the product set; the visible window always sits in the middle copy and
+  // wraps by exactly one set width, so the loop is seamless in both directions.
+  const originals = $$('.card', rTrack);
+  for (let k = 0; k < 2; k++) {
+    originals.forEach(card => {
+      const clone = card.cloneNode(true);
+      clone.setAttribute('aria-hidden', 'true');
+      clone.tabIndex = -1;
+      rTrack.append(clone);
+    });
+  }
+  const cards = $$('.card', rTrack);
+  let SW = 1;                                           // width of one product set incl. gap
+  const measure = () => { SW = cards[originals.length].offsetLeft - cards[0].offsetLeft || 1; };
+  measure();
+  addEventListener('resize', measure);
+  const setW = () => SW;
+  const wrap = v => ((v % SW) + SW) % SW;               // position inside one set, 0..SW
+  const setBar = p => { bar.style.transform = `translateX(${p * 300}%)`; };
+
   if (!fine) {
-    // Touch screens: native horizontal scrolling (momentum + snap) is far more reliable than custom drag.
+    // Touch screens: native horizontal scrolling (momentum + snap); recentre on the middle copy
+    // once a swipe settles, so it never reaches an end.
     rail.classList.add('rail--native');
-    const syncBar = () => {
-      const m = rail.scrollWidth - rail.clientWidth;
-      bar.style.transform = `translateX(${(m ? rail.scrollLeft / m : 0) * 300}%)`;
+    const recentre = () => {
+      const w = setW();
+      if (rail.scrollLeft < w || rail.scrollLeft >= w * 2) rail.scrollLeft = w + wrap(rail.scrollLeft);
     };
-    rail.addEventListener('scroll', syncBar, { passive: true });
-    syncBar();
+    let settle;
+    rail.addEventListener('scroll', () => {
+      setBar(wrap(rail.scrollLeft) / setW());
+      clearTimeout(settle); settle = setTimeout(recentre, 140);
+    }, { passive: true });
+    requestAnimationFrame(() => { rail.scrollLeft = setW(); setBar(0); });
   } else {
-    let rx = 0, rTarget = 0, dragging = false, startX = 0, startT = 0, moved = 0, vel = 0, lastPX = 0;
-    const maxX = () => Math.max(0, rTrack.scrollWidth - innerWidth);
-    const clamp = v => Math.min(0, Math.max(-maxX(), v));
+    let pos = 0, target = 0, vel = 0, hovering = false, dragging = false;
+    let startX = 0, startT = 0, lastPX = 0, moved = 0;
+    const SPEED = reduce ? 0 : 38;                       // px per second of auto-glide
+    rail.addEventListener('pointerenter', () => { hovering = true; });
+    rail.addEventListener('pointerleave', () => { hovering = false; });
     rail.addEventListener('pointerdown', e => {
-      dragging = true; moved = 0; startX = e.clientX; startT = rTarget; lastPX = e.clientX; vel = 0;
+      dragging = true; moved = 0; startX = lastPX = e.clientX; startT = target; vel = 0;
       rail.setPointerCapture(e.pointerId);
     });
     rail.addEventListener('pointermove', e => {
       if (!dragging) return;
       const d = e.clientX - startX; moved = Math.max(moved, Math.abs(d));
-      vel = e.clientX - lastPX; lastPX = e.clientX;
-      rTarget = clamp(startT + d * 1.2);
+      vel = lastPX - e.clientX; lastPX = e.clientX;
+      target = startT - d * 1.2;
     });
-    const endDrag = () => { if (!dragging) return; dragging = false; rTarget = clamp(rTarget + vel * 14); };
+    const endDrag = () => { if (dragging) { dragging = false; vel *= 1.2; } };
     rail.addEventListener('pointerup', endDrag);
     rail.addEventListener('pointercancel', endDrag);
     rail.addEventListener('click', e => { if (moved > 6) { e.preventDefault(); e.stopPropagation(); } }, true);
-    // gentle scroll-linked drift so the rail moves even without dragging
-    let scrollDrift = 0;
-    ScrollTrigger.create({
-      trigger: '.products', start: 'top bottom', end: 'bottom top',
-      onUpdate: self => { scrollDrift = -self.progress * Math.min(maxX(), innerWidth * .35); }
-    });
-    gsap.ticker.add(() => {
-      const goal = clamp(rTarget + scrollDrift);
-      rx += (goal - rx) * .085;
-      rTrack.style.transform = `translate3d(${rx}px,0,0)`;
-      const m = maxX(); const p = m ? -rx / m : 0;
-      bar.style.transform = `translateX(${p * 300}%)`;
+    // Horizontal trackpad swipes (and Shift + wheel) move the rail; vertical wheel still scrolls the page.
+    rail.addEventListener('wheel', e => {
+      const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+      if (!dx) return;
+      e.preventDefault();
+      target += dx;
+    }, { passive: false });
+    gsap.ticker.add((time, deltaMs) => {
+      const dt = Math.min(deltaMs, 64) / 1000;
+      if (!dragging) {
+        target += vel; vel *= .92;                         // fling momentum
+        if (!hovering) target += SPEED * dt;
+      }
+      pos += (target - pos) * Math.min(1, dt * 7);
+      const x = -(setW() + wrap(pos));
+      rTrack.style.transform = `translate3d(${x}px,0,0)`;
+      setBar(wrap(pos) / setW());
     });
   }
   if (fine && !reduce) {
