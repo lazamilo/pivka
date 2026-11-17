@@ -98,7 +98,9 @@
     const hero = $('.hero'), heroBox = hero.getBoundingClientRect();
     const titleRight = Math.max(...$$('.hero__title .split, .hero__title .split-i')
       .map(el => el.getBoundingClientRect().right - heroBox.left));
-    const navBottom = $('.nav').getBoundingClientRect().bottom - heroBox.top;
+    // Nav is fixed (and moves once scrolled), so derive where it sits over the hero at rest:
+    // 50px from the page top (.nav top), minus where the hero starts. Scroll position doesn't matter.
+    const navBottom = 50 + $('.nav').offsetHeight - hero.offsetTop;
     const cs = getComputedStyle(hero);
     const gut = parseFloat(cs.paddingRight);
     const top = Math.max(navBottom + 16, 100);
